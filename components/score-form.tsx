@@ -36,6 +36,10 @@ export function ScoreForm({ game, players }: { game: Game; players: Player[] }) 
     return <GenericScoreForm game={game} players={players} />
   }
 
+  return <TemplateScoreForm game={game} players={players} />
+}
+
+function TemplateScoreForm({ game, players }: { game: Game; players: Player[] }) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
