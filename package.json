@@ -9,7 +9,9 @@
     "start": "next start",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "deploy": "npm run build && npm run test",
+    "preview": "npm run build && npm run start"
   },
   "dependencies": {
     "@hookform/resolvers": "latest",

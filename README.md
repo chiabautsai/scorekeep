@@ -105,6 +105,49 @@ For coverage report:
 npm run test:coverage
 ```
 
+## Deployment
+
+### Netlify Deployment
+
+This project is optimized for Netlify deployment with the following configuration:
+
+**Automatic Deployment:**
+1. Connect your GitHub repository to Netlify
+2. Netlify will automatically detect the Next.js project
+3. Build settings are configured in `netlify.toml`
+4. Deploy automatically on every push to main branch
+
+**Manual Deployment:**
+```bash
+# Install Netlify CLI
+npm install -g netlify-cli
+
+# Build the project
+npm run build
+
+# Deploy to Netlify
+netlify deploy --prod
+```
+
+**Build Configuration:**
+- Build command: `npm run build`
+- Publish directory: `.next`
+- Node version: 18
+- Uses `@netlify/plugin-nextjs` for optimal Next.js support
+
+**Features:**
+- ✅ Automatic deployments from GitHub
+- ✅ Security headers configured
+- ✅ Caching optimization for static assets
+- ✅ Next.js dynamic routes support
+- ✅ Client-side routing handled
+
+### Environment Variables
+
+If you need environment variables for production:
+1. Add them in Netlify dashboard under Site settings > Environment variables
+2. Prefix client-side variables with `NEXT_PUBLIC_`
+
 ## License
 
 This project is private and not licensed for public use.
