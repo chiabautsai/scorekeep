@@ -1,13 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddPlayerForm } from '@/components/add-player-form'
-import { addPlayer } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 import { createMockPlayer } from '../utils/test-utils'
 
-// Mock the data layer
-jest.mock('@/lib/db/queries')
-const mockAddPlayer = addPlayer as jest.MockedFunction<typeof addPlayer>
+// Mock fetch
+global.fetch = jest.fn()
 
 // Mock the toast
 jest.mock('@/components/ui/use-toast')
@@ -58,7 +56,11 @@ describe('AddPlayerForm', () => {
   it('submits form with valid data', async () => {
     const user = userEvent.setup()
     const mockPlayer = createMockPlayer({ name: 'Alice' })
-    mockAddPlayer.mockResolvedValue(mockPlayer)
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => mockPlayer,
+    } as Response)
     
     render(<AddPlayerForm onAddPlayer={mockOnAddPlayer} />)
     
@@ -69,7 +71,13 @@ describe('AddPlayerForm', () => {
     await user.click(submitButton)
     
     await waitFor(() => {
-      expect(mockAddPlayer).toHaveBeenCalledWith({ name: 'Alice' })
+      expect(fetch).toHaveBeenCalledWith('/api/players', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: 'Alice' }),
+      })
       expect(mockOnAddPlayer).toHaveBeenCalledWith(mockPlayer)
       expect(mockToast).toHaveBeenCalledWith({
         title: 'Player added',
@@ -80,7 +88,8 @@ describe('AddPlayerForm', () => {
 
   it('handles submission error gracefully', async () => {
     const user = userEvent.setup()
-    mockAddPlayer.mockRejectedValue(new Error('Network error'))
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockRejectedValue(new Error('Network error'))
     
     render(<AddPlayerForm onAddPlayer={mockOnAddPlayer} />)
     
@@ -105,7 +114,8 @@ describe('AddPlayerForm', () => {
     const promise = new Promise(resolve => {
       resolvePromise = resolve
     })
-    mockAddPlayer.mockReturnValue(promise)
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockReturnValue(promise)
     
     render(<AddPlayerForm onAddPlayer={mockOnAddPlayer} />)
     
@@ -120,7 +130,10 @@ describe('AddPlayerForm', () => {
     expect(submitButton).toBeDisabled()
     
     // Resolve the promise to finish the test
-    resolvePromise!(createMockPlayer({ name: 'Alice' }))
+    resolvePromise!({
+      ok: true,
+      json: async () => createMockPlayer({ name: 'Alice' }),
+    } as Response)
     
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /add player/i })).toBeInTheDocument()
@@ -130,7 +143,11 @@ describe('AddPlayerForm', () => {
   it('clears form after successful submission', async () => {
     const user = userEvent.setup()
     const mockPlayer = createMockPlayer({ name: 'Alice' })
-    mockAddPlayer.mockResolvedValue(mockPlayer)
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => mockPlayer,
+    } as Response)
     
     render(<AddPlayerForm onAddPlayer={mockOnAddPlayer} />)
     

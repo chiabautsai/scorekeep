@@ -1,13 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ScoreForm } from '@/components/score-form'
-import { saveSession } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 import { createMockGame, createMockPlayer } from '../utils/test-utils'
 
-// Mock the data layer
-jest.mock('@/lib/db/queries')
-const mockSaveSession = saveSession as jest.MockedFunction<typeof saveSession>
+// Mock fetch
+global.fetch = jest.fn()
 
 // Mock the toast
 jest.mock('@/components/ui/use-toast')
@@ -67,7 +65,10 @@ describe('ScoreForm', () => {
     })
 
     beforeEach(() => {
-      mockSaveSession.mockResolvedValue('session123')
+      ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'session123' }),
+      } as Response)
     })
 
     it('renders all 7 Wonders scoring categories', () => {
@@ -159,25 +160,34 @@ describe('ScoreForm', () => {
       await user.click(saveButton)
 
       await waitFor(() => {
-        expect(mockSaveSession).toHaveBeenCalledWith(
-          expect.objectContaining({
-            players: expect.arrayContaining([
-              expect.objectContaining({
-                playerId: 'player1',
-                playerName: 'Alice',
-                score: 54, // 10+15+5+8+(-2)+12+6 = 54
-                details: {
-                  civilian: 10,
-                  science: 15,
-                  commercial: 5,
-                  guilds: 8,
-                  military: -2,
-                  wonder: 12,
-                  coins: 18
-                }
-              })
-            ])
-          })
+        expect(fetch).toHaveBeenCalledWith('/api/sessions', expect.objectContaining({
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }))
+        
+        // Check the body separately by parsing it
+        const callArgs = (fetch as jest.MockedFunction<typeof fetch>).mock.calls[0]
+        const body = JSON.parse(callArgs[1]?.body as string)
+        
+        expect(body.players).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              playerId: 'player1',
+              playerName: 'Alice',
+              score: 54, // 10+15+5+8+(-2)+12+6 = 54
+              details: {
+                civilian: 10,
+                science: 15,
+                commercial: 5,
+                guilds: 8,
+                military: -2,
+                wonder: 12,
+                coins: 18
+              }
+            })
+          ])
         )
       })
     })
@@ -215,7 +225,8 @@ describe('ScoreForm', () => {
   it('handles submission errors gracefully', async () => {
     const user = userEvent.setup()
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { })
-    mockSaveSession.mockRejectedValue(new Error('Network error'))
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockRejectedValue(new Error('Network error'))
 
     const genericGame = createMockGame({ template: 'generic' })
     render(<ScoreForm game={genericGame} players={[mockPlayers[0]]} />)
@@ -253,11 +264,12 @@ describe('ScoreForm', () => {
 
   it('shows loading state during submission', async () => {
     const user = userEvent.setup()
-    let resolvePromise: (value: string) => void
-    const promise = new Promise<string>(resolve => {
+    let resolvePromise: (value: Response) => void
+    const promise = new Promise<Response>(resolve => {
       resolvePromise = resolve
     })
-    mockSaveSession.mockReturnValue(promise)
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockReturnValue(promise)
 
     const genericGame = createMockGame({ template: 'generic' })
     render(<ScoreForm game={genericGame} players={[mockPlayers[0]]} />)
@@ -286,6 +298,9 @@ describe('ScoreForm', () => {
     expect(saveButton).toBeDisabled()
 
     // Resolve the promise to finish the test
-    resolvePromise!('session123')
+    resolvePromise!({
+      ok: true,
+      json: async () => ({ id: 'session123' }),
+    } as Response)
   })
 })

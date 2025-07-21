@@ -2,13 +2,11 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GenericScoreForm } from '@/components/generic-score-form'
-import { saveSession } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 import { createMockGame, createMockPlayer } from '../utils/test-utils'
 
-// Mock the data layer
-jest.mock('@/lib/db/queries')
-const mockSaveSession = saveSession as jest.MockedFunction<typeof saveSession>
+// Mock fetch
+global.fetch = jest.fn()
 
 // Mock the toast
 jest.mock('@/components/ui/use-toast')
@@ -271,7 +269,11 @@ describe('GenericScoreForm', () => {
 
   it('saves session with correct data', async () => {
     const user = userEvent.setup()
-    mockSaveSession.mockResolvedValue('session123')
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'session123' }),
+    } as Response)
 
     render(<GenericScoreForm game={genericGame} players={mockPlayers} />)
 
@@ -299,11 +301,22 @@ describe('GenericScoreForm', () => {
     await user.click(saveButton)
 
     await waitFor(() => {
-      expect(mockSaveSession).toHaveBeenCalledWith({
-        gameId: 'game1',
-        gameName: 'Test Game',
-        date: expect.any(String),
-        players: expect.arrayContaining([
+      expect(fetch).toHaveBeenCalledWith('/api/sessions', expect.objectContaining({
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }))
+      
+      // Check the body separately by parsing it
+      const callArgs = (fetch as jest.MockedFunction<typeof fetch>).mock.calls[0]
+      const body = JSON.parse(callArgs[1]?.body as string)
+      
+      expect(body.gameId).toBe('game1')
+      expect(body.gameName).toBe('Test Game')
+      expect(body.date).toEqual(expect.any(String))
+      expect(body.players).toEqual(
+        expect.arrayContaining([
           expect.objectContaining({
             playerId: 'player1',
             playerName: 'Alice',
@@ -318,7 +331,7 @@ describe('GenericScoreForm', () => {
             })
           })
         ])
-      })
+      )
     })
   })
 

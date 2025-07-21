@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { User } from "lucide-react"
 
-import { getPlayerStats } from "@/lib/db/queries"
+// Removed direct database import
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -23,7 +23,9 @@ export function PlayerStats() {
   useEffect(() => {
     const loadPlayers = async () => {
       try {
-        const data = await getPlayerStats()
+        const response = await fetch('/api/players/stats')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
         setPlayers(data)
       } catch (error) {
         console.error("Failed to load player stats:", error)

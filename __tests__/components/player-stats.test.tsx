@@ -1,10 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { PlayerStats } from '@/components/player-stats'
-import { getPlayerStats } from '@/lib/db/queries'
 
-// Mock the data layer
-jest.mock('@/lib/db/queries')
-const mockGetPlayerStats = getPlayerStats as jest.MockedFunction<typeof getPlayerStats>
+// Mock fetch
+global.fetch = jest.fn()
 
 // Mock next/link
 jest.mock('next/link', () => {
@@ -19,7 +17,7 @@ describe('PlayerStats', () => {
   })
 
   it('shows loading state initially', () => {
-    mockGetPlayerStats.mockImplementation(() => new Promise(() => {})) // Never resolves
+    (fetch as jest.MockedFunction<typeof fetch>).mockImplementation(() => new Promise(() => {})) // Never resolves
     
     render(<PlayerStats />)
     
@@ -44,7 +42,10 @@ describe('PlayerStats', () => {
       }
     ]
     
-    mockGetPlayerStats.mockResolvedValue(mockStats)
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => mockStats,
+    } as Response)
     
     render(<PlayerStats />)
     
@@ -58,10 +59,15 @@ describe('PlayerStats', () => {
       expect(screen.getByText('4 games')).toBeInTheDocument()
       expect(screen.getByText('2 games')).toBeInTheDocument()
     })
+    
+    expect(fetch).toHaveBeenCalledWith('/api/players/stats')
   })
 
   it('shows empty state when no players exist', async () => {
-    mockGetPlayerStats.mockResolvedValue([])
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    } as Response)
     
     render(<PlayerStats />)
     
@@ -73,7 +79,7 @@ describe('PlayerStats', () => {
 
   it('handles error gracefully', async () => {
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
-    mockGetPlayerStats.mockRejectedValue(new Error('Failed to load'))
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockRejectedValue(new Error('Failed to load'))
     
     render(<PlayerStats />)
     
@@ -96,7 +102,10 @@ describe('PlayerStats', () => {
       }
     ]
     
-    mockGetPlayerStats.mockResolvedValue(mockStats)
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => mockStats,
+    } as Response)
     
     render(<PlayerStats />)
     

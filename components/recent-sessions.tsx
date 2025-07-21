@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { CalendarDays, Trophy } from "lucide-react"
 
-import { getRecentSessions } from "@/lib/db/queries"
+// Removed direct database import
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -29,7 +29,9 @@ export function RecentSessions() {
   useEffect(() => {
     const loadSessions = async () => {
       try {
-        const data = await getRecentSessions()
+        const response = await fetch('/api/sessions/recent')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
         setSessions(data)
       } catch (error) {
         console.error("Failed to load recent sessions:", error)

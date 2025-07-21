@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
 
-import { getGame, getPlayersByIds } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScoreForm } from "@/components/score-form"
@@ -40,7 +40,26 @@ export default function ScorePage() {
 
     const loadData = async () => {
       try {
-        const [gameData, playersData] = await Promise.all([getGame(gameId), getPlayersByIds(playerIds)])
+        const [gameResponse, playersResponse] = await Promise.all([
+          fetch(`/api/games/${gameId}`),
+          fetch('/api/players/by-ids', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ids: playerIds }),
+          })
+        ])
+
+        if (!gameResponse.ok || !playersResponse.ok) {
+          throw new Error('Failed to fetch data')
+        }
+
+        const [gameData, playersData] = await Promise.all([
+          gameResponse.json(),
+          playersResponse.json()
+        ])
+
         setGame(gameData)
         setPlayers(playersData)
       } catch (error) {

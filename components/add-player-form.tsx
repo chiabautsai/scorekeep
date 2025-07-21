@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { addPlayer } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -35,7 +35,17 @@ export function AddPlayerForm({ onAddPlayer }: { onAddPlayer: (player: Player) =
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
-      const newPlayer = await addPlayer(values)
+      const response = await fetch('/api/players', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
+      
+      if (!response.ok) throw new Error('Failed to add player')
+      
+      const newPlayer = await response.json()
       onAddPlayer(newPlayer)
       toast({
         title: "Player added",

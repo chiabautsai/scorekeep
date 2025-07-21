@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { addGame } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -41,7 +41,17 @@ export function AddGameForm({ onAddGame }: { onAddGame: (game: Game) => void }) 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true)
     try {
-      const newGame = await addGame(values)
+      const response = await fetch('/api/games', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      })
+      
+      if (!response.ok) throw new Error('Failed to add game')
+      
+      const newGame = await response.json()
       onAddGame(newGame)
       toast({
         title: "Game added",

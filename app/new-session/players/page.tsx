@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight, Plus, User } from "lucide-react"
 
-import { getGame, getPlayers } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -43,7 +43,20 @@ export default function PlayerSelection() {
 
     const loadData = async () => {
       try {
-        const [gameData, playersData] = await Promise.all([getGame(gameId), getPlayers()])
+        const [gameResponse, playersResponse] = await Promise.all([
+          fetch(`/api/games/${gameId}`),
+          fetch('/api/players')
+        ])
+        
+        if (!gameResponse.ok || !playersResponse.ok) {
+          throw new Error('Failed to fetch data')
+        }
+        
+        const [gameData, playersData] = await Promise.all([
+          gameResponse.json(),
+          playersResponse.json()
+        ])
+        
         setGame(gameData)
         setPlayers(playersData)
       } catch (error) {

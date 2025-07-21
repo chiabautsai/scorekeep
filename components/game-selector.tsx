@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Dices, Plus, Search } from "lucide-react"
 
-import { getGames } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -27,7 +27,9 @@ export function GameSelector() {
   useEffect(() => {
     const loadGames = async () => {
       try {
-        const data = await getGames()
+        const response = await fetch('/api/games')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
         setGames(data)
       } catch (error) {
         console.error("Failed to load games:", error)

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Save, Plus, Trophy, Settings } from "lucide-react"
 
-import { saveSession } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -314,7 +314,18 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
         players: playerScores,
       }
 
-      const sessionId = await saveSession(sessionData)
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sessionData),
+      })
+      
+      if (!response.ok) throw new Error('Failed to save session')
+      
+      const result = await response.json()
+      const sessionId = result.id
 
       toast({
         title: "Session saved",

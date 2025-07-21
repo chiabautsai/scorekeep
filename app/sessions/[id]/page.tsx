@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Calendar, Dices, Medal, Trophy, User } from "lucide-react"
 
-import { getSession } from "@/lib/db/queries"
+// Removed direct database import
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -38,7 +38,9 @@ export default function SessionPage() {
   useEffect(() => {
     const loadSession = async () => {
       try {
-        const data = await getSession(sessionId)
+        const response = await fetch(`/api/sessions/${sessionId}`)
+        if (!response.ok) throw new Error('Failed to fetch session')
+        const data = await response.json()
         setSession(data)
       } catch (error) {
         console.error("Failed to load session:", error)

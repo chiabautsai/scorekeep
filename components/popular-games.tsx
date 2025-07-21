@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Dices } from "lucide-react"
 
-import { getPopularGames } from "@/lib/db/queries"
+// Removed direct database import
 import { Skeleton } from "@/components/ui/skeleton"
 
 type Game = {
@@ -24,7 +24,9 @@ export function PopularGames() {
   useEffect(() => {
     const loadGames = async () => {
       try {
-        const data = await getPopularGames()
+        const response = await fetch('/api/games/popular')
+        if (!response.ok) throw new Error('Failed to fetch')
+        const data = await response.json()
         setGames(data)
       } catch (error) {
         console.error("Failed to load popular games:", error)

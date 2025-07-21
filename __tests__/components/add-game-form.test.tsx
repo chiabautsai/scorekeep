@@ -1,12 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddGameForm } from '@/components/add-game-form'
-import { addGame } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 
-// Mock the data layer
-jest.mock('@/lib/db/queries')
-const mockAddGame = addGame as jest.MockedFunction<typeof addGame>
+// Mock fetch
+global.fetch = jest.fn()
 
 // Mock the toast
 jest.mock('@/components/ui/use-toast')
@@ -53,7 +51,11 @@ describe('AddGameForm', () => {
   it('submits form with valid data', async () => {
     const user = userEvent.setup()
     const mockGame = { id: '1', name: 'Test Game', template: 'generic' }
-    mockAddGame.mockResolvedValue(mockGame)
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => mockGame,
+    } as Response)
     
     render(<AddGameForm onAddGame={mockOnAddGame} />)
     
@@ -66,9 +68,15 @@ describe('AddGameForm', () => {
     await user.click(submitButton)
     
     await waitFor(() => {
-      expect(mockAddGame).toHaveBeenCalledWith({
-        name: 'Test Game',
-        template: 'generic'
+      expect(fetch).toHaveBeenCalledWith('/api/games', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: 'Test Game',
+          template: 'generic'
+        }),
       })
       expect(mockOnAddGame).toHaveBeenCalledWith(mockGame)
       expect(mockToast).toHaveBeenCalledWith({
@@ -81,7 +89,11 @@ describe('AddGameForm', () => {
   it('submits form with 7 Wonders template', async () => {
     const user = userEvent.setup()
     const mockGame = { id: '2', name: '7 Wonders', template: 'seven-wonders' }
-    mockAddGame.mockResolvedValue(mockGame)
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockResolvedValue({
+      ok: true,
+      json: async () => mockGame,
+    } as Response)
     
     render(<AddGameForm onAddGame={mockOnAddGame} />)
     
@@ -94,9 +106,15 @@ describe('AddGameForm', () => {
     await user.click(submitButton)
     
     await waitFor(() => {
-      expect(mockAddGame).toHaveBeenCalledWith({
-        name: '7 Wonders',
-        template: 'seven-wonders'
+      expect(fetch).toHaveBeenCalledWith('/api/games', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: '7 Wonders',
+          template: 'seven-wonders'
+        }),
       })
       expect(mockOnAddGame).toHaveBeenCalledWith(mockGame)
       expect(mockToast).toHaveBeenCalledWith({
@@ -106,11 +124,10 @@ describe('AddGameForm', () => {
     })
   })
 
-
-
   it('handles submission error', async () => {
     const user = userEvent.setup()
-    mockAddGame.mockRejectedValue(new Error('Failed to add game'))
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockRejectedValue(new Error('Failed to add game'))
     
     render(<AddGameForm onAddGame={mockOnAddGame} />)
     
@@ -131,7 +148,8 @@ describe('AddGameForm', () => {
 
   it('shows loading state during submission', async () => {
     const user = userEvent.setup()
-    mockAddGame.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
+    
+    ;(fetch as jest.MockedFunction<typeof fetch>).mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)))
     
     render(<AddGameForm onAddGame={mockOnAddGame} />)
     
