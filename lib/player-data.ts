@@ -1,4 +1,4 @@
-import { getSessions } from "./data"
+import { getSessions } from "./db/data"
 
 // Helper function to safely access localStorage (for client-side only)
 const storage = {
