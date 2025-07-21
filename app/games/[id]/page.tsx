@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Calendar, Dices, Trophy, User } from "lucide-react"
 
-import { getGameById, getGameSessions } from "@/lib/game-data"
+// Removed direct imports - now using API routes
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -47,7 +47,20 @@ export default function GamePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [gameData, sessionsData] = await Promise.all([getGameById(gameId), getGameSessions(gameId)])
+        const [gameResponse, sessionsResponse] = await Promise.all([
+          fetch(`/api/games/${gameId}/details`),
+          fetch(`/api/games/${gameId}/sessions`)
+        ])
+        
+        if (!gameResponse.ok || !sessionsResponse.ok) {
+          throw new Error('Failed to fetch data')
+        }
+        
+        const [gameData, sessionsData] = await Promise.all([
+          gameResponse.json(),
+          sessionsResponse.json()
+        ])
+        
         setGame(gameData)
         setSessions(sessionsData)
       } catch (error) {

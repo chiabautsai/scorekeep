@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, Calendar, Dices, Medal, User } from "lucide-react"
 
-import { getPlayerById, getPlayerSessions } from "@/lib/player-data"
+// Removed direct imports - now using API routes
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -42,7 +42,20 @@ export default function PlayerPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [playerData, sessionsData] = await Promise.all([getPlayerById(playerId), getPlayerSessions(playerId)])
+        const [playerResponse, sessionsResponse] = await Promise.all([
+          fetch(`/api/players/${playerId}/details`),
+          fetch(`/api/players/${playerId}/sessions`)
+        ])
+        
+        if (!playerResponse.ok || !sessionsResponse.ok) {
+          throw new Error('Failed to fetch data')
+        }
+        
+        const [playerData, sessionsData] = await Promise.all([
+          playerResponse.json(),
+          sessionsResponse.json()
+        ])
+        
         setPlayer(playerData)
         setSessions(sessionsData)
       } catch (error) {
