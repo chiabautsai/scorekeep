@@ -1,4 +1,5 @@
-import { getGame, getSessions } from "./db/data"
+import { getGame } from "./db/data"
+import { getSessions } from "./db/queries"
 
 // Helper function to safely access localStorage (for client-side only)
 const storage = {

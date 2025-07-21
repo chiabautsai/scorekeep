@@ -1,4 +1,4 @@
-import { getSessions } from "./db/data"
+import { getSessions, getPlayerById as getPlayerFromDb } from "./db/queries"
 
 // Helper function to safely access localStorage (for client-side only)
 const storage = {
@@ -15,8 +15,7 @@ export const getPlayerById = async (id: string) => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  const players = storage.getItem("players") || []
-  const player = players.find((p: any) => p.id === id)
+  const player = await getPlayerFromDb(id)
 
   if (!player) return null
 
