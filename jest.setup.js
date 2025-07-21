@@ -10,6 +10,21 @@ const localStorageMock = {
 
 global.localStorage = localStorageMock
 
+// Mock fetch for database client
+global.fetch = jest.fn()
+
+// Mock the database client to prevent actual database connections during tests
+jest.mock('@/lib/db/client', () => ({
+  db: {
+    select: jest.fn(),
+    insert: jest.fn(),
+    transaction: jest.fn(),
+  },
+  client: {
+    execute: jest.fn(),
+  },
+}))
+
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

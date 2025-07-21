@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { User } from "lucide-react"
 
-import { getPlayerStats } from "@/lib/data"
+import { getPlayerStats } from "@/lib/db/queries"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 

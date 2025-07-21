@@ -1,9 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { PlayerStats } from '@/components/player-stats'
-import { getPlayerStats } from '@/lib/data'
+import { getPlayerStats } from '@/lib/db/queries'
 
 // Mock the data layer
-jest.mock('@/lib/data')
+jest.mock('@/lib/db/queries')
 const mockGetPlayerStats = getPlayerStats as jest.MockedFunction<typeof getPlayerStats>
 
 // Mock next/link

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { CalendarDays, Trophy } from "lucide-react"
 
-import { getRecentSessions } from "@/lib/data"
+import { getRecentSessions } from "@/lib/db/queries"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 

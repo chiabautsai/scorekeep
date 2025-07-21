@@ -2,12 +2,12 @@ import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { GenericScoreForm } from '@/components/generic-score-form'
-import { saveSession } from '@/lib/data'
+import { saveSession } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 import { createMockGame, createMockPlayer } from '../utils/test-utils'
 
 // Mock the data layer
-jest.mock('@/lib/data')
+jest.mock('@/lib/db/queries')
 const mockSaveSession = saveSession as jest.MockedFunction<typeof saveSession>
 
 // Mock the toast
@@ -23,12 +23,12 @@ jest.mock('next/navigation', () => ({
 }))
 
 describe('GenericScoreForm', () => {
-  const genericGame = createMockGame({ 
-    id: 'game1', 
-    name: 'Test Game', 
-    template: 'generic' 
+  const genericGame = createMockGame({
+    id: 'game1',
+    name: 'Test Game',
+    template: 'generic'
   })
-  
+
   const mockPlayers = [
     createMockPlayer({ id: 'player1', name: 'Alice' }),
     createMockPlayer({ id: 'player2', name: 'Bob' })
@@ -145,7 +145,7 @@ describe('GenericScoreForm', () => {
     // Test highest wins logic with target score
     // Alice: 20, Bob: 50 -> no winner yet
     // Alice: 30 (total 50), Bob: 100 (total 150) -> Bob wins (reaches target first)
-    
+
     const targetScoreInput = screen.getByLabelText('Target Score')
     await user.clear(targetScoreInput)
     await user.type(targetScoreInput, '100') // Set target to 100
@@ -160,7 +160,7 @@ describe('GenericScoreForm', () => {
     // Round 1: Alice 20, Bob 50 - no winner yet
     const aliceScoreInput1 = screen.getAllByRole('spinbutton')[0]
     const bobScoreInput1 = screen.getAllByRole('spinbutton')[1]
-    
+
     await user.clear(aliceScoreInput1)
     await user.type(aliceScoreInput1, '20')
     await user.clear(bobScoreInput1)
@@ -177,7 +177,7 @@ describe('GenericScoreForm', () => {
     // Round 2: Alice 30 (total 50), Bob 100 (total 150) - Bob reaches target, Bob wins
     const aliceScoreInput2 = screen.getAllByRole('spinbutton')[0]
     const bobScoreInput2 = screen.getAllByRole('spinbutton')[1]
-    
+
     await user.clear(aliceScoreInput2)
     await user.type(aliceScoreInput2, '30')
     await user.clear(bobScoreInput2)
@@ -272,7 +272,7 @@ describe('GenericScoreForm', () => {
   it('saves session with correct data', async () => {
     const user = userEvent.setup()
     mockSaveSession.mockResolvedValue('session123')
-    
+
     render(<GenericScoreForm game={genericGame} players={mockPlayers} />)
 
     // Start and complete a round
@@ -334,8 +334,8 @@ describe('GenericScoreForm', () => {
       expect(screen.getByText('Test Game - Round 1')).toBeInTheDocument()
     })
 
-    // Settings button should be enabled before any rounds
-    const settingsButton = screen.getByRole('button', { name: '' }) // Settings icon button
+    // Settings button should be enabled before any rounds - look for settings button by aria-label or test-id
+    const settingsButton = screen.getByRole('button', { name: /settings/i })
     expect(settingsButton).not.toBeDisabled()
 
     await user.click(settingsButton)
@@ -403,7 +403,7 @@ describe('GenericScoreForm', () => {
 
     const aliceScoreInput = screen.getAllByRole('spinbutton')[0]
     const bobScoreInput = screen.getAllByRole('spinbutton')[1]
-    
+
     await user.clear(aliceScoreInput)
     await user.type(aliceScoreInput, '25')
     await user.clear(bobScoreInput)
@@ -425,7 +425,7 @@ describe('GenericScoreForm', () => {
       expect(screen.getByText('🎉 GAME OVER! 🎉')).toBeInTheDocument()
       expect(screen.getByText('Alice is the Champion!')).toBeInTheDocument()
     })
-    
+
     expect(mockToast).toHaveBeenCalledWith({
       title: '🎉 Game Over!',
       description: 'Alice wins! Game ended manually.'

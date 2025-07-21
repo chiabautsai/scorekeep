@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft } from "lucide-react"
 
-import { getGame, getPlayersByIds } from "@/lib/data"
+import { getGame, getPlayersByIds } from "@/lib/db/queries"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScoreForm } from "@/components/score-form"

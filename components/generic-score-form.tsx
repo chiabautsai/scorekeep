@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Save, Plus, Trophy, Settings } from "lucide-react"
 
-import { saveSession } from "@/lib/data"
+import { saveSession } from "@/lib/db/queries"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -78,7 +78,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
   // Round scoring schema
   const createRoundSchema = () => {
     const playerFields: Record<string, any> = {}
-    
+
     players.forEach((player) => {
       playerFields[player.id] = z.object({
         score: z.coerce.number()
@@ -92,7 +92,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
 
   const createDefaultValues = () => {
     const defaultValues: Record<string, RoundScore> = {}
-    
+
     players.forEach((player) => {
       defaultValues[player.id] = { score: 0 }
     })
@@ -121,10 +121,10 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
       const standings = players.map(player => ({
         player,
         total: newRounds.reduce((sum, round) => sum + (round[player.id]?.score || 0), 0)
-      })).sort((a, b) => 
+      })).sort((a, b) =>
         gameSettings.winCondition === 'highest' ? b.total - a.total : a.total - b.total
       )
-      
+
       return standings[0].player
     }
 
@@ -149,7 +149,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
         }
       }
     }
-    
+
     return null
   }
 
@@ -158,19 +158,19 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
     const standings = players.map((player) => {
       const total = calculatePlayerTotal(player.id)
       let pointsToTarget = 0
-      
+
       if (gameSettings.hasTargetScore && gameSettings.scoreToWin) {
-        pointsToTarget = gameSettings.winCondition === 'highest' 
+        pointsToTarget = gameSettings.winCondition === 'highest'
           ? Math.max(0, gameSettings.scoreToWin - total)
           : Math.max(0, gameSettings.scoreToWin - total) // For lowest wins, show points until upper bound
       }
-      
+
       return {
         player,
         total,
         pointsToTarget
       }
-    }).sort((a, b) => 
+    }).sort((a, b) =>
       gameSettings.winCondition === 'highest' ? b.total - a.total : a.total - b.total
     )
 
@@ -185,10 +185,10 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
     const averageScore = standings.reduce((sum, s) => sum + s.total, 0) / standings.length
     const roundsPlayed = rounds.length
     const maxRoundsReached = gameSettings.hasMaxRounds && roundsPlayed >= gameSettings.maxRounds
-    
+
     // Determine if it's a close game based on win condition
     const isCloseGame = standings.length > 1 && Math.abs(standings[0].total - standings[1].total) <= 5
-    
+
     return {
       leader: leader?.player,
       bestScore,
@@ -204,11 +204,11 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
   const handleSettingsUpdate = (values: GameSettings) => {
     setGameSettings(values)
     setShowSettings(false)
-    
-    const targetInfo = values.hasTargetScore 
+
+    const targetInfo = values.hasTargetScore
       ? ` at ${values.scoreToWin} points`
       : " (no target score)"
-    
+
     toast({
       title: "Settings updated",
       description: `Game configured: ${values.winCondition === 'highest' ? 'Highest' : 'Lowest'} score wins${targetInfo}`,
@@ -219,7 +219,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
   const handleEndGame = () => {
     const standings = getCurrentStandings()
     const winner = standings[0]?.player
-    
+
     if (winner) {
       setGameWinner(winner)
       toast({
@@ -232,7 +232,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
   // Handle completing a round
   const handleCompleteRound = async (values: z.infer<typeof formSchema>) => {
     const newRoundData: PlayerRoundData = {}
-    
+
     players.forEach((player) => {
       newRoundData[player.id] = values[player.id]
     })
@@ -247,7 +247,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
       const reason = gameSettings.hasMaxRounds && newRounds.length >= gameSettings.maxRounds
         ? `Maximum rounds (${gameSettings.maxRounds}) reached!`
         : `Reached target score of ${gameSettings.scoreToWin}!`
-      
+
       toast({
         title: "🎉 Game Over!",
         description: `${winner.name} wins! ${reason}`,
@@ -256,10 +256,10 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
       // Start new round
       setCurrentRound(currentRound + 1)
       form.reset(createDefaultValues())
-      
+
       const remainingRounds = gameSettings.hasMaxRounds ? gameSettings.maxRounds - newRounds.length : null
       const roundInfo = remainingRounds ? ` (${remainingRounds} rounds left)` : ""
-      
+
       toast({
         title: "Round completed",
         description: `Starting Round ${currentRound + 2}${roundInfo}`,
@@ -273,7 +273,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
     try {
       const playerScores = players.map((player) => {
         const totalScore = calculatePlayerTotal(player.id)
-        
+
         return {
           playerId: player.id,
           playerName: player.name,
@@ -287,7 +287,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
       })
 
       // Sort players by score based on win condition
-      playerScores.sort((a, b) => 
+      playerScores.sort((a, b) =>
         gameSettings.winCondition === 'highest' ? b.score - a.score : a.score - b.score
       )
 
@@ -296,10 +296,10 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
       let previousScore = playerScores[0]?.score || 0
 
       playerScores.forEach((player, index) => {
-        const scoreDiff = gameSettings.winCondition === 'highest' 
+        const scoreDiff = gameSettings.winCondition === 'highest'
           ? player.score < previousScore
           : player.score > previousScore
-          
+
         if (scoreDiff) {
           currentRank = index + 1
           previousScore = player.score
@@ -359,7 +359,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
                 {(() => {
                   const reason = gameSettings.hasMaxRounds && rounds.length >= gameSettings.maxRounds
                     ? `Maximum rounds (${gameSettings.maxRounds}) reached!`
-                    : gameSettings.hasTargetScore 
+                    : gameSettings.hasTargetScore
                       ? `Reached target score of ${gameSettings.scoreToWin}!`
                       : 'Game ended manually'
                   return reason
@@ -507,6 +507,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
                   size="sm"
                   onClick={() => setShowSettings(true)}
                   disabled={rounds.length > 0}
+                  aria-label="Settings"
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
@@ -517,7 +518,7 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="font-medium">Target:</span> {
-                  gameSettings.hasTargetScore 
+                  gameSettings.hasTargetScore
                     ? `${gameSettings.scoreToWin} pts${gameSettings.winCondition === 'lowest' ? ' (upper bound)' : ''}`
                     : 'None'
                 }
@@ -596,9 +597,8 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
                 </div>
                 <div className="space-y-1">
                   {getCurrentStandings().map((standing, index) => (
-                    <div key={standing.player.id} className={`flex items-center justify-between text-sm p-2 rounded-md ${
-                      index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 dark:from-yellow-900/20 dark:to-orange-900/20 dark:border-yellow-700' : ''
-                    }`}>
+                    <div key={standing.player.id} className={`flex items-center justify-between text-sm p-2 rounded-md ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 dark:from-yellow-900/20 dark:to-orange-900/20 dark:border-yellow-700' : ''
+                      }`}>
                       <div className="flex items-center gap-2">
                         <span className={`${index === 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'}`}>
                           {index === 0 ? '👑' : `#${index + 1}`}
@@ -666,9 +666,8 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
                       const standings = getCurrentStandings()
                       const isLeader = standings[0]?.player.id === player.id && standings[0]?.total > 0
                       return (
-                        <TableCell key={player.id} className={`text-center ${
-                          isLeader ? 'bg-gradient-to-br from-yellow-100 to-orange-100 text-yellow-800 font-bold dark:from-yellow-900/30 dark:to-orange-900/30 dark:text-yellow-200' : ''
-                        }`}>
+                        <TableCell key={player.id} className={`text-center ${isLeader ? 'bg-gradient-to-br from-yellow-100 to-orange-100 text-yellow-800 font-bold dark:from-yellow-900/30 dark:to-orange-900/30 dark:text-yellow-200' : ''
+                          }`}>
                           {isLeader ? `👑 ${total}` : total}
                         </TableCell>
                       )
@@ -731,11 +730,11 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
                     <Plus className="mr-2 h-4 w-4" />
                     Complete Round {currentRound + 1}
                   </Button>
-                  
+
                   {!gameSettings.hasTargetScore && rounds.length > 0 && (
-                    <Button 
-                      type="button" 
-                      variant="secondary" 
+                    <Button
+                      type="button"
+                      variant="secondary"
                       className="w-full"
                       onClick={handleEndGame}
                     >
@@ -752,9 +751,9 @@ export function GenericScoreForm({ game, players }: { game: Game; players: Playe
 
       {/* Save Session Button */}
       {!showSettings && (gameWinner || rounds.length > 0) && (
-        <Button 
-          onClick={handleSaveSession} 
-          className="w-full" 
+        <Button
+          onClick={handleSaveSession}
+          className="w-full"
           disabled={isSubmitting}
           variant={gameWinner ? "default" : "outline"}
         >

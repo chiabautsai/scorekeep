@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ScoreForm } from '@/components/score-form'
-import { saveSession } from '@/lib/data'
+import { saveSession } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 import { createMockGame, createMockPlayer } from '../utils/test-utils'
 
 // Mock the data layer
-jest.mock('@/lib/data')
+jest.mock('@/lib/db/queries')
 const mockSaveSession = saveSession as jest.MockedFunction<typeof saveSession>
 
 // Mock the toast

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Save, Crown, Target, TrendingUp } from "lucide-react"
 
-import { saveSession } from "@/lib/data"
+import { saveSession } from "@/lib/db/queries"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -62,7 +62,7 @@ function TemplateScoreForm({ game, players }: { game: Game; players: Player[] })
         if (playerData.longestPath) score += 10
         break
       case "wingspan":
-        score = 
+        score =
           (Number(playerData.birds) || 0) +
           (Number(playerData.bonusCards) || 0) +
           (Number(playerData.endOfRound) || 0) +
@@ -71,7 +71,7 @@ function TemplateScoreForm({ game, players }: { game: Game; players: Player[] })
           (Number(playerData.tuckedCards) || 0)
         break
       case "seven-wonders":
-        score = 
+        score =
           (Number(playerData.civilian) || 0) +
           (Number(playerData.science) || 0) +
           (Number(playerData.commercial) || 0) +
@@ -104,7 +104,7 @@ function TemplateScoreForm({ game, players }: { game: Game; players: Player[] })
     const averageScore = totalScore / standings.length
     const highestScore = standings[0]?.score || 0
     const isCloseGame = standings.length > 1 && (standings[0].score - standings[1].score) <= 5
-    
+
     // Check if there's a tie (multiple players with the same highest score)
     const isTied = standings.length > 1 && standings[0].score === standings[1].score
 
@@ -284,6 +284,7 @@ function TemplateScoreForm({ game, players }: { game: Game; players: Player[] })
           playerName: player.name,
           score: finalScore,
           details: playerData,
+          rank: 0, // Initialize rank, will be set below
         }
       })
 
@@ -380,10 +381,10 @@ function TemplateScoreForm({ game, players }: { game: Game; players: Player[] })
         const standings = getCurrentStandings(formValues)
         const hasWinner = standings.length > 0 && standings[0].score > 0
         const winner = hasWinner ? standings[0] : null
-        
+
         // Only show if there's a clear winner with a significant score
         if (!winner || winner.score === 0) return null
-        
+
         return (
           <Card className="border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 via-orange-50 to-red-50 dark:from-yellow-900/20 dark:via-orange-900/20 dark:to-red-900/20 shadow-lg">
             <CardContent className="pt-6">
@@ -410,161 +411,160 @@ function TemplateScoreForm({ game, players }: { game: Game; players: Player[] })
           </Card>
         )
       })()}
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Real-time Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Live Score Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Current Leader */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <Crown className="h-4 w-4" />
-                  Current Leader
-                </div>
-                {(() => {
-                  const formValues = form.watch()
-                  const stats = getGameStats(formValues)
-                  return (
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-lg text-yellow-700 dark:text-yellow-300">
-                        {stats.leader ? `👑 ${stats.leader.name}` : "🤝 Tied"}
-                      </span>
-                      <Badge variant="secondary" className="text-sm bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-                        {stats.highestScore} pts
-                      </Badge>
-                    </div>
-                  )
-                })()}
-              </div>
-
-              {/* Game Stats */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                  <TrendingUp className="h-4 w-4" />
-                  Game Stats
-                </div>
-                {(() => {
-                  const formValues = form.watch()
-                  const stats = getGameStats(formValues)
-                  return (
-                    <div className="space-y-1">
-                      <div className="text-sm">
-                        <span className="font-medium">Total Points:</span> {stats.totalScore}
-                      </div>
-                      <div className="text-sm">
-                        <span className="font-medium">Average:</span> {stats.averageScore} pts
-                      </div>
-                      {stats.isCloseGame && (
-                        <Badge variant="outline" className="text-xs">
-                          Close Game!
+          {/* Real-time Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="h-5 w-5" />
+                Live Score Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Current Leader */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <Crown className="h-4 w-4" />
+                    Current Leader
+                  </div>
+                  {(() => {
+                    const formValues = form.watch()
+                    const stats = getGameStats(formValues)
+                    return (
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-lg text-yellow-700 dark:text-yellow-300">
+                          {stats.leader ? `👑 ${stats.leader.name}` : "🤝 Tied"}
+                        </span>
+                        <Badge variant="secondary" className="text-sm bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                          {stats.highestScore} pts
                         </Badge>
-                      )}
-                    </div>
-                  )
-                })()}
-              </div>
-
-              {/* Current Standings */}
-              <div className="space-y-2">
-                <div className="text-sm font-medium text-muted-foreground">
-                  Current Standings
+                      </div>
+                    )
+                  })()}
                 </div>
-                {(() => {
-                  const formValues = form.watch()
-                  const standings = getCurrentStandings(formValues)
-                  return (
-                    <div className="space-y-1">
-                      {standings.map((standing, index) => (
-                        <div key={standing.player.id} className={`flex items-center justify-between text-sm p-2 rounded-md ${
-                          index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 dark:from-yellow-900/20 dark:to-orange-900/20 dark:border-yellow-700' : ''
-                        }`}>
-                          <div className="flex items-center gap-2">
-                            <span className={`${index === 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'}`}>
-                              {index === 0 ? '👑' : `#${index + 1}`}
-                            </span>
-                            <span className={index === 0 ? "font-bold text-yellow-800 dark:text-yellow-200" : ""}>
-                              {standing.player.name}
+
+                {/* Game Stats */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <TrendingUp className="h-4 w-4" />
+                    Game Stats
+                  </div>
+                  {(() => {
+                    const formValues = form.watch()
+                    const stats = getGameStats(formValues)
+                    return (
+                      <div className="space-y-1">
+                        <div className="text-sm">
+                          <span className="font-medium">Total Points:</span> {stats.totalScore}
+                        </div>
+                        <div className="text-sm">
+                          <span className="font-medium">Average:</span> {stats.averageScore} pts
+                        </div>
+                        {stats.isCloseGame && (
+                          <Badge variant="outline" className="text-xs">
+                            Close Game!
+                          </Badge>
+                        )}
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* Current Standings */}
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Current Standings
+                  </div>
+                  {(() => {
+                    const formValues = form.watch()
+                    const standings = getCurrentStandings(formValues)
+                    return (
+                      <div className="space-y-1">
+                        {standings.map((standing, index) => (
+                          <div key={standing.player.id} className={`flex items-center justify-between text-sm p-2 rounded-md ${index === 0 ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 dark:from-yellow-900/20 dark:to-orange-900/20 dark:border-yellow-700' : ''
+                            }`}>
+                            <div className="flex items-center gap-2">
+                              <span className={`${index === 0 ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground'}`}>
+                                {index === 0 ? '👑' : `#${index + 1}`}
+                              </span>
+                              <span className={index === 0 ? "font-bold text-yellow-800 dark:text-yellow-200" : ""}>
+                                {standing.player.name}
+                              </span>
+                            </div>
+                            <span className={`font-medium ${index === 0 ? 'text-yellow-800 dark:text-yellow-200' : ''}`}>
+                              {standing.score}
                             </span>
                           </div>
-                          <span className={`font-medium ${index === 0 ? 'text-yellow-800 dark:text-yellow-200' : ''}`}>
-                            {standing.score}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })()}
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-48">Scoring Category</TableHead>
-                {players.map((player) => (
-                  <TableHead key={player.id} className="text-center min-w-32">
-                    {player.name}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {categories.map((category) => (
-                <TableRow key={category.key}>
-                  <TableCell className="font-medium">{category.label}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-48">Scoring Category</TableHead>
                   {players.map((player) => (
-                    <TableCell key={player.id} className="text-center">
-                      <FormField
-                        control={form.control}
-                        name={`${player.id}.${category.key}`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormControl>
-                              {category.type === "checkbox" ? (
-                                <div className="flex justify-center">
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </div>
-                              ) : (
-                                <Input
-                                  type="number"
-                                  min={category.min}
-                                  className="text-center"
-                                  {...field}
-                                />
-                              )}
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TableCell>
+                    <TableHead key={player.id} className="text-center min-w-32">
+                      {player.name}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {categories.map((category) => (
+                  <TableRow key={category.key}>
+                    <TableCell className="font-medium">{category.label}</TableCell>
+                    {players.map((player) => (
+                      <TableCell key={player.id} className="text-center">
+                        <FormField
+                          control={form.control}
+                          name={`${player.id}.${category.key}`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                {category.type === "checkbox" ? (
+                                  <div className="flex justify-center">
+                                    <Checkbox
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                  </div>
+                                ) : (
+                                  <Input
+                                    type="number"
+                                    min={category.min}
+                                    className="text-center"
+                                    {...field}
+                                  />
+                                )}
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          <Save className="mr-2 h-4 w-4" />
-          {isSubmitting ? "Saving..." : "Save Session"}
-        </Button>
-      </form>
-    </Form>
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Save className="mr-2 h-4 w-4" />
+            {isSubmitting ? "Saving..." : "Save Session"}
+          </Button>
+        </form>
+      </Form>
     </div>
   )
 }

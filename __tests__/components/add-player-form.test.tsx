@@ -1,12 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AddPlayerForm } from '@/components/add-player-form'
-import { addPlayer } from '@/lib/data'
+import { addPlayer } from '@/lib/db/queries'
 import { toast } from '@/components/ui/use-toast'
 import { createMockPlayer } from '../utils/test-utils'
 
 // Mock the data layer
-jest.mock('@/lib/data')
+jest.mock('@/lib/db/queries')
 const mockAddPlayer = addPlayer as jest.MockedFunction<typeof addPlayer>
 
 // Mock the toast

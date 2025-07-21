@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Dices } from "lucide-react"
 
-import { getPopularGames } from "@/lib/data"
+import { getPopularGames } from "@/lib/db/queries"
 import { Skeleton } from "@/components/ui/skeleton"
 
 type Game = {

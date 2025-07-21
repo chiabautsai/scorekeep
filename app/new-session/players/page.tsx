@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ChevronLeft, ChevronRight, Plus, User } from "lucide-react"
 
-import { getGame, getPlayers } from "@/lib/data"
+import { getGame, getPlayers } from "@/lib/db/queries"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
